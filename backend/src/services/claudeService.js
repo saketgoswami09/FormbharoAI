@@ -50,9 +50,7 @@ export const chatWithClaude = async (history, userMessage, extractedData) => {
     ];
 
     const response = await anthropic.messages.create({
-        model: 'claude-3-5-sonnet-20240620', // User asked for claude-sonnet-5, I will use that identifier if possible or use a known one. 
-        // Wait, 'claude-sonnet-5' is not a real API model string. It's likely 'claude-3-5-sonnet-20240620'.
-        // I will use 'claude-3-5-sonnet-20240620' for now as it's the current latest.
+        model: 'claude-sonnet-5',
         max_tokens: 1024,
         system: systemPrompt,
         messages: messages,
