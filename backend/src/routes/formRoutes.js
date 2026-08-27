@@ -26,6 +26,7 @@ router.post('/upload', upload.single('file'), asyncHandler(async (req, res) => {
     if (!req.file) throw new Error('No file uploaded');
     
     const sessionId = randomUUID();
+    console.log(`[formRoutes] /upload generated sessionId: ${sessionId}`);
     createSession(sessionId, { 
         fileBuffer: req.file.buffer, 
         mimeType: req.file.mimetype,
@@ -37,8 +38,11 @@ router.post('/upload', upload.single('file'), asyncHandler(async (req, res) => {
 // POST /api/extract
 router.post('/extract', asyncHandler(async (req, res) => {
     const { sessionId } = req.body;
+    console.log(`[formRoutes] /extract received sessionId: ${sessionId}`);
     const session = getSession(sessionId);
-    if (!session) throw new Error('Invalid or expired session');
+    if (!session) {
+        return res.status(400).json({ error: 'Invalid or expired session. Please re-upload your document.' });
+    }
     
     // Pass buffer and mime type to Gemini service
     const extractedDataString = await extractData(session.fileBuffer, session.mimeType);
@@ -64,7 +68,9 @@ router.post('/extract', asyncHandler(async (req, res) => {
 router.post('/chat', asyncHandler(async (req, res) => {
     const { sessionId, message } = req.body;
     const session = getSession(sessionId);
-    if (!session) throw new Error('Invalid or expired session');
+    if (!session) {
+        return res.status(400).json({ error: 'Invalid or expired session. Please re-upload your document.' });
+    }
     
     const responseText = await chatWithGemini(session.history || [], message, session.extractedData);
     
