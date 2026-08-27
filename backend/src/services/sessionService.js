@@ -1,17 +1,12 @@
-// In-memory session store
 const sessions = new Map();
 
-// Helper to add session with TTL
-export const createSession = (data) => {
-    const sessionId = Math.random().toString(36).substring(7);
+export const createSession = (sessionId, data) => {
     const session = {
-        data,
-        history: [], // Initialize history
+        ...data,
         createdAt: Date.now(),
-        timer: setTimeout(() => sessions.delete(sessionId), 30 * 60 * 1000) // 30 min TTL
+        timer: setTimeout(() => sessions.delete(sessionId), 30 * 60 * 1000)
     };
     sessions.set(sessionId, session);
-    return sessionId;
 };
 
 export const getSession = (sessionId) => sessions.get(sessionId);
@@ -21,4 +16,10 @@ export const updateSession = (sessionId, data) => {
     if (session) {
         sessions.set(sessionId, { ...session, ...data });
     }
+};
+
+export const deleteSession = (sessionId) => {
+    const session = sessions.get(sessionId);
+    if (session) clearTimeout(session.timer);
+    sessions.delete(sessionId);
 };

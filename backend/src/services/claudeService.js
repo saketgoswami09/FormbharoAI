@@ -5,55 +5,34 @@ const anthropic = new Anthropic({
 });
 
 export const extractData = async (fileBuffer, mimeType) => {
-    // HARD RULE: Never write document content to disk or console.log it.
-    // Use Haiku for cheaper/fast extraction. 
-    // Fallback to 'claude-sonnet-5' if accuracy is insufficient.
-
-    const base64Image = fileBuffer.toString('base64');
+    const base64Data = fileBuffer.toString('base64');
     
-    const message = await anthropic.messages.create({
+    const response = await anthropic.messages.create({
         model: 'claude-haiku-4-5-20251001',
         max_tokens: 1024,
-        messages: [
-            {
-                role: 'user',
-                content: [
-                    {
-                        type: 'image',
-                        source: {
-                            type: 'base64',
-                            media_type: mimeType,
-                            data: base64Image,
-                        },
-                    },
-                    {
-                        type: 'text',
-                        text: 'Extract all fields from this document into a JSON object.'
-                    }
-                ],
-            },
-        ],
+        system: `You are an expert data extractor. Extract the personal details from the provided document. Return ONLY valid JSON. Structure the output into standard keys: fullName, email, phone, address, dateOfBirth, gender, educationLevel, etc. Do not include markdown formatting like \`\`\`json.`,
+        messages: [{
+            role: 'user',
+            content: [{
+                type: 'image',
+                source: { type: 'base64', media_type: mimeType, data: base64Data }
+            }]
+        }]
     });
     
-    return message.content[0].text;
+    return response.content[0].text;
 };
 
 export const chatWithClaude = async (history, userMessage, extractedData) => {
-    const systemPrompt = `You are helping a user fill an Indian exam form. Here is the data extracted from their uploaded document: ${JSON.stringify(extractedData || {})}. Help them with the form, referencing this data.`;
-
-    const messages = [
-        ...history,
-        {
-            role: 'user',
-            content: userMessage
-        }
-    ];
+    const systemPrompt = `You are helping a user fill an exam form.
+    Extracted data: ${JSON.stringify(extractedData || {})}.
+    If the user asks you to fill fields, provide the exact value to be filled.`;
 
     const response = await anthropic.messages.create({
         model: 'claude-sonnet-5',
         max_tokens: 1024,
         system: systemPrompt,
-        messages: messages,
+        messages: [...history, { role: 'user', content: userMessage }]
     });
 
     return response.content[0].text;
