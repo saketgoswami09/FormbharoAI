@@ -24,8 +24,14 @@ router.post('/extract', async (req, res, next) => {
         const session = getSession(sessionId);
         if (!session) throw new Error('Invalid session');
         
-        const extractedData = await extractData(session.fileBuffer, session.mimeType);
-        updateSession(sessionId, { extractedData });
+        const extractedData = await extractData(session.data.fileBuffer, session.data.mimeType);
+        
+        // Clear file buffer after extraction (privacy fix)
+        // Intentional: raw document bytes should only live in memory for the duration of the extraction call.
+        updateSession(sessionId, { 
+            data: { ...session.data, extractedData, fileBuffer: null } 
+        });
+        
         res.json({ data: extractedData });
     } catch (error) {
         next(error);
@@ -39,8 +45,18 @@ router.post('/chat', async (req, res, next) => {
         const session = getSession(sessionId);
         if (!session) throw new Error('Invalid session');
         
-        const response = await chatWithClaude(session.history || [], message);
-        res.json({ response });
+        const responseText = await chatWithClaude(session.history || [], message, session.data.extractedData);
+        
+        // Update history
+        const updatedHistory = [
+            ...(session.history || []),
+            { role: 'user', content: message },
+            { role: 'assistant', content: responseText }
+        ];
+        
+        updateSession(sessionId, { history: updatedHistory });
+        
+        res.json({ response: responseText });
     } catch (error) {
         next(error);
     }

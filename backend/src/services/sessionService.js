@@ -6,6 +6,7 @@ export const createSession = (data) => {
     const sessionId = Math.random().toString(36).substring(7);
     const session = {
         data,
+        history: [], // Initialize history
         createdAt: Date.now(),
         timer: setTimeout(() => sessions.delete(sessionId), 30 * 60 * 1000) // 30 min TTL
     };
