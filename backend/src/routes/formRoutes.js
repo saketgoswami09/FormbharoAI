@@ -2,7 +2,7 @@ import { Router } from 'express';
 import multer from 'multer';
 import { randomUUID } from 'crypto';
 import { createSession, getSession, updateSession } from '../services/sessionService.js';
-import { extractData, chatWithClaude } from '../services/claudeService.js';
+import { extractData, chatWithGemini } from '../services/geminiService.js';
 
 const router = Router();
 const upload = multer({ 
@@ -40,15 +40,24 @@ router.post('/extract', asyncHandler(async (req, res) => {
     const session = getSession(sessionId);
     if (!session) throw new Error('Invalid or expired session');
     
-    const extractedData = await extractData(session.fileBuffer, session.mimeType);
+    // Pass buffer and mime type to Gemini service
+    const extractedDataString = await extractData(session.fileBuffer, session.mimeType);
     
-    // Privacy: clear buffer immediately
+    let parsedData = {};
+    try {
+        parsedData = JSON.parse(extractedDataString);
+    } catch (e) {
+        console.error("Failed to parse extracted JSON", e);
+        parsedData = { error: "Extraction yielded invalid structure." };
+    }
+
+    // Privacy: clear buffer immediately after successful/failed extraction
     updateSession(sessionId, { 
-        extractedData: JSON.parse(extractedData), 
+        extractedData: parsedData, 
         fileBuffer: null 
     });
     
-    res.json({ data: JSON.parse(extractedData) });
+    res.json({ data: parsedData });
 }));
 
 // POST /api/chat
@@ -57,7 +66,7 @@ router.post('/chat', asyncHandler(async (req, res) => {
     const session = getSession(sessionId);
     if (!session) throw new Error('Invalid or expired session');
     
-    const responseText = await chatWithClaude(session.history || [], message, session.extractedData);
+    const responseText = await chatWithGemini(session.history || [], message, session.extractedData);
     
     updateSession(sessionId, { 
         history: [...(session.history || []), { role: 'user', content: message }, { role: 'assistant', content: responseText }]
