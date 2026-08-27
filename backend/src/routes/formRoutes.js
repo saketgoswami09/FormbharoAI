@@ -37,15 +37,15 @@ router.post('/upload', upload.single('file'), asyncHandler(async (req, res) => {
 
 // POST /api/extract
 router.post('/extract', asyncHandler(async (req, res) => {
-    const { sessionId } = req.body;
-    console.log(`[formRoutes] /extract received sessionId: ${sessionId}`);
+    const { sessionId, profileType } = req.body;
+    console.log(`[formRoutes] /extract received sessionId: ${sessionId}, profileType: ${profileType}`);
     const session = getSession(sessionId);
     if (!session) {
         return res.status(400).json({ error: 'Invalid or expired session. Please re-upload your document.' });
     }
     
-    // Pass buffer and mime type to Gemini service
-    const extractedDataString = await extractData(session.fileBuffer, session.mimeType);
+    // Pass buffer, mime type, and profileType to Gemini service
+    const extractedDataString = await extractData(session.fileBuffer, session.mimeType, profileType);
     
     let parsedData = {};
     try {
