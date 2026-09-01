@@ -45,6 +45,12 @@ export const extractData = async (fileBuffer, mimeType, profileType) => {
         properties.motherName = { type: Type.STRING, nullable: true };
         properties.category = { type: Type.STRING, nullable: true };
         properties.nationality = { type: Type.STRING, nullable: true };
+        properties.religion = { type: Type.STRING, nullable: true };
+        properties.maritalStatus = { type: Type.STRING, nullable: true };
+        // NOTE: Aadhaar numbers are intentionally NOT extracted here.
+        // Under India's Aadhaar Act (Section 29) and UIDAI masking guidelines,
+        // collecting/storing full Aadhaar numbers requires specific authorization.
+        // Users should enter Aadhaar manually at form-fill time if needed.
         properties.education = {
             type: Type.OBJECT,
             nullable: true,
@@ -56,6 +62,38 @@ export const extractData = async (fileBuffer, mimeType, profileType) => {
                 percentageOrCGPA: { type: Type.STRING, nullable: true }
             }
         };
+    } else if (profileType === 'education') {
+        textPrompt += ' Focus on academic records, institutions, grades, subjects, and enrollment details.';
+        properties.dateOfBirth = { type: Type.STRING, nullable: true };
+        properties.gender = { type: Type.STRING, nullable: true };
+        properties.fatherName = { type: Type.STRING, nullable: true };
+        properties.motherName = { type: Type.STRING, nullable: true };
+        properties.rollNumber = { type: Type.STRING, nullable: true };
+        properties.enrollmentNumber = { type: Type.STRING, nullable: true };
+        properties.education = {
+            type: Type.OBJECT,
+            nullable: true,
+            properties: {
+                level: { type: Type.STRING, nullable: true },
+                institution: { type: Type.STRING, nullable: true },
+                boardOrUniversity: { type: Type.STRING, nullable: true },
+                yearOfPassing: { type: Type.STRING, nullable: true },
+                percentageOrCGPA: { type: Type.STRING, nullable: true },
+                stream: { type: Type.STRING, nullable: true },
+                subjects: { type: Type.ARRAY, items: { type: Type.STRING }, nullable: true }
+            }
+        };
+    } else if (profileType === 'travel') {
+        textPrompt += ' Focus on passport details, visa information, nationality, and travel document specifics.';
+        properties.dateOfBirth = { type: Type.STRING, nullable: true };
+        properties.gender = { type: Type.STRING, nullable: true };
+        properties.fatherName = { type: Type.STRING, nullable: true };
+        properties.nationality = { type: Type.STRING, nullable: true };
+        properties.passportNumber = { type: Type.STRING, nullable: true };
+        properties.passportIssueDate = { type: Type.STRING, nullable: true };
+        properties.passportExpiryDate = { type: Type.STRING, nullable: true };
+        properties.placeOfIssue = { type: Type.STRING, nullable: true };
+        properties.placeOfBirth = { type: Type.STRING, nullable: true };
     } else {
         // Default / Custom generic extraction
         properties.dateOfBirth = { type: Type.STRING, nullable: true };
@@ -124,5 +162,35 @@ export const chatWithGemini = async (history, userMessage, extractedData) => {
     });
 
     return response.text;
+};
+
+export const mapFieldsToDataCard = async (detectedFields, dataCardKeys) => {
+    const response = await ai.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: [{
+            role: 'user',
+            parts: [{
+                text: `Match each detected form field to the best corresponding Data Card key, if any.
+Detected fields: ${JSON.stringify(detectedFields)}
+Available Data Card keys: ${JSON.stringify(dataCardKeys)}
+For each detected field, return the best matching key or null if there's no reasonable match. Include a confidence score (high/medium/low).`
+            }]
+        }],
+        config: {
+            responseMimeType: "application/json",
+            responseSchema: {
+                type: Type.ARRAY,
+                items: {
+                    type: Type.OBJECT,
+                    properties: {
+                        fieldId: { type: Type.STRING },
+                        matchedKey: { type: Type.STRING, nullable: true },
+                        confidence: { type: Type.STRING, enum: ["high", "medium", "low"] }
+                    }
+                }
+            }
+        }
+    });
+    return JSON.parse(response.text);
 };
 

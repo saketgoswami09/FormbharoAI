@@ -5,9 +5,9 @@ export const errorHandler = (err, req, res, next) => {
     console.error(err.stack);
     console.error('-------------');
 
-    res.status(500).json({
+    const statusCode = res.statusCode !== 200 ? res.statusCode : 500;
+    res.status(statusCode).json({
         error: 'Something went wrong!',
-        // TEMPORARY for local debugging only — remove before deploying
-        debug: err.message
+        ...(process.env.NODE_ENV !== 'production' && { debug: err.message })
     });
 };

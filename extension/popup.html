@@ -1,14 +1,94 @@
 <!DOCTYPE html>
 <html>
 <head>
+  <meta charset="utf-8">
   <link rel="stylesheet" href="popup.css">
 </head>
 <body>
-  <h3>FormBharo</h3>
-  <input type="file" id="fileUpload" />
-  <div id="chatArea"></div>
-  <hr>
-  <div id="formFields"></div>
+  <!-- Auth Section -->
+  <div id="authSection">
+    <h3>🧾 FormBharo</h3>
+    <div id="authToggle">
+      <button id="showLogin" class="tab active">Login</button>
+      <button id="showRegister" class="tab">Register</button>
+    </div>
+    <div id="loginForm">
+      <input type="email" id="loginEmail" placeholder="Email" />
+      <input type="password" id="loginPassword" placeholder="Password" />
+      <button id="loginBtn" class="primary-btn">Login</button>
+    </div>
+    <div id="registerForm" style="display:none;">
+      <input type="email" id="regEmail" placeholder="Email" />
+      <input type="password" id="regPassword" placeholder="Password" />
+      <button id="regBtn" class="primary-btn">Register</button>
+    </div>
+    <div id="authError" class="error"></div>
+  </div>
+
+  <!-- Main App Section (shown after login) -->
+  <div id="appSection" style="display:none;">
+    <div class="header">
+      <h3>🧾 FormBharo</h3>
+      <div class="header-right">
+        <span id="userEmail" class="user-email"></span>
+        <button id="logoutBtn" class="small-btn">Logout</button>
+      </div>
+    </div>
+
+    <!-- Status Bar -->
+    <div id="statusBar" class="status"></div>
+
+    <!-- Upload Section -->
+    <div class="section">
+      <label class="upload-label" for="fileUpload">
+        📄 Upload Document (PDF, JPG, PNG)
+      </label>
+      <input type="file" id="fileUpload" accept=".pdf,.jpg,.jpeg,.png" />
+      <select id="profileType">
+        <option value="job">Job Profile</option>
+        <option value="government_exam">Government Exam</option>
+        <option value="education">Education</option>
+        <option value="travel">Travel</option>
+        <option value="custom">Custom</option>
+      </select>
+      <button id="extractBtn" class="primary-btn" disabled>Extract Data</button>
+    </div>
+
+    <!-- Extracted Data Preview -->
+    <div id="dataPreview" class="section" style="display:none;">
+      <h4>📋 Extracted Data</h4>
+      <div id="dataContent" class="data-box"></div>
+      <div class="save-row">
+        <input type="text" id="cardName" placeholder="DataCard name (e.g. My Resume)" />
+        <button id="saveCardBtn" class="primary-btn">Save as DataCard</button>
+      </div>
+    </div>
+
+    <!-- Saved DataCards -->
+    <div class="section">
+      <h4>💾 Your DataCards</h4>
+      <button id="refreshCards" class="small-btn">Refresh</button>
+      <div id="cardsList"></div>
+    </div>
+
+    <!-- Form Fields (from page) -->
+    <div class="section">
+      <h4>🖊️ Page Form Fields</h4>
+      <button id="autoFillPageBtn" class="primary-btn" disabled>Auto-Fill This Page</button>
+      <div id="formFields"></div>
+    </div>
+
+    <!-- Chat Section -->
+    <div class="section">
+      <h4>💬 Chat with AI</h4>
+      <div id="chatArea"></div>
+      <div class="chat-input-row">
+        <input type="text" id="chatInput" placeholder="Ask about your data..." />
+        <button id="chatSendBtn" class="primary-btn">Send</button>
+      </div>
+    </div>
+  </div>
+
   <script src="popup.js"></script>
 </body>
 </html>
